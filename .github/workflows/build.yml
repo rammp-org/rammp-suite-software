@@ -18,13 +18,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        image: [gemini, realsense]
+        image: [gemini, oak, realsense]
     steps:
       - uses: actions/checkout@v4
 
-      # arm64 only: that is what abra and the demo machine are, and the two
-      # driver debs are documented as arm64 packages. Add linux/amd64 to
-      # `platforms` below once the amd64 debs are confirmed to exist.
+      # arm64 only: that is what abra and the demo machine are, and it is the
+      # only platform rammp-base publishes. Add linux/amd64 to `platforms`
+      # below once rammp-org/RAMMP-docker#10 ships a multi-arch base.
       - uses: docker/setup-qemu-action@v3
 
       - uses: docker/setup-buildx-action@v3
