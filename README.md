@@ -10,7 +10,13 @@ Code & Drivers for the sensors on RAMMP.
 | Intel RealSense D405 | wrist | `ghcr.io/rammp-org/rammp-suite-software/realsense` | `ros-humble-realsense2-camera` |
 | Luxonis OAK-D Pro (PoE) | wrist, alternative | `ghcr.io/rammp-org/rammp-suite-software/oak` | `ros-humble-depthai-ros-v3` |
 
-Every driver ships as an arm64 apt package from `packages.ros.org`, so each
+## Tooling
+
+| Tool | Image | ROS package |
+|---|---|---|
+| Foxglove bridge (WebSocket on :8765) | `ghcr.io/rammp-org/rammp-suite-software/foxglove` | `ros-humble-foxglove-bridge` |
+
+Every driver (and the bridge) ships as an arm64 apt package from `packages.ros.org`, so each
 Dockerfile is `rammp-base` plus one `apt install` — no source builds. The base
 is what puts the cameras on Cyclone DDS with the fleet's config, the same graph
 as the arm; its tag is arm64-only, so these images are too.
