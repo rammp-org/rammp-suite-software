@@ -1,0 +1,61 @@
+# Orbbec Gemini 330-series defaults. Every value below is a ROS parameter of
+# orbbec_camera_node, and the image's entrypoint already runs the node with
+# this file, so a deployment overrides any of them from sheppy's `params:`
+# block (a later --params-file wins) and needs no `command:` unless it
+# renames:
+#
+#   - id: gemini336l_docker
+#     kind: docker
+#     container:
+#       image: ghcr.io/rammp-org/rammp-suite-software/gemini:<tag>
+#       privileged: true
+#       network_mode: host
+#       ipc: host
+#       volumes: [/dev:/dev]
+#       user: "1000:1000"
+#       environment: {ROS_DOMAIN_ID: "0", HOME: /tmp}
+#       # Only to rename: this driver names by namespace, and camera_name is
+#       # the tf frame prefix, so set both to the same role.
+#       command: [--ros-args, -r, __ns:=/scene_camera]
+#     params:
+#       camera_name: scene_camera
+#       serial_number: "CP1E54200012"
+#       color_fps: 15
+#       depth_fps: 15
+#
+# Parameter names are the launch arguments of gemini_330_series.launch.py in
+# the Humble apt release (2.9.x), which the launch file passes to the node
+# unchanged; `ros2 run orbbec_camera list_devices_node` prints serials.
+/**:
+  ros__parameters:
+    # tf frame prefix (<camera_name>_color_optical_frame, ...). Not the topic
+    # prefix: that is the namespace, remapped in the command; a bare run has
+    # none and publishes /color/image_raw.
+    camera_name: camera
+    # Which camera. Both empty = the first Gemini found; set one of them when
+    # the machine has several. usb_port is the bus path, e.g. "2-3.4".
+    serial_number: ""
+    usb_port: ""
+    # Streams. 0 = the device's default profile. The 336L does 1280x800 and
+    # 640x480 at up to 30 fps for both color and depth.
+    enable_color: true
+    color_width: 0
+    color_height: 0
+    color_fps: 0
+    enable_depth: true
+    depth_width: 0
+    depth_height: 0
+    depth_fps: 0
+    enable_left_ir: false
+    enable_right_ir: false
+    # Depth resampled into the color frame, so depth/image_raw and the point
+    # cloud line up with color/image_raw pixel for pixel.
+    depth_registration: false
+    align_mode: SW
+    enable_point_cloud: true
+    enable_colored_point_cloud: false
+    # Structured-light projector. Off, the stereo pair works on texture alone.
+    enable_laser: true
+    device_preset: Default
+    enable_accel: false
+    enable_gyro: false
