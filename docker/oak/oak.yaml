@@ -1,0 +1,64 @@
+# Luxonis OAK defaults: the DepthAI v3 driver's own, with RealSense-compatible
+# topics. Every value below is a ROS parameter of driver_node, and the image's
+# entrypoint already runs the node with this file, so a deployment overrides
+# any of them from sheppy's `params:` block (a later --params-file wins) and
+# needs no `command:` unless it renames:
+#
+#   - id: oak_d_pro_docker
+#     kind: docker
+#     container:
+#       image: ghcr.io/rammp-org/rammp-suite-software/oak:<tag>
+#       network_mode: host       # PoE: reached over the network, no /dev
+#       ipc: host
+#       environment: {ROS_DOMAIN_ID: "0"}
+#       # Only to rename: topics default to /driver/..., and the tf frames
+#       # follow the node name.
+#       command: [--ros-args, -r, __node:=wrist_camera]
+#     params:
+#       driver.i_ip: 192.168.1.200
+#       color.i_fps: 15.0
+#       depth.i_fps: 15.0
+#       depth.i_depth_preset: ROBOTICS
+#
+# Parameter names are those of depthai_ros_driver_v3 3.3.x. With i_rs_compat
+# the stereo section is called `depth` and rgb is `color`; under `stereo:` or
+# `rgb:` they are silently ignored.
+/**:
+  ros__parameters:
+    driver:
+      # Which camera. All empty = the first OAK found; set one of them when
+      # the machine has several. i_ip for PoE models; i_device_id (the MxID,
+      # e.g. 18443010C1038C1200) or i_usb_port_id for USB ones.
+      i_ip: ""
+      i_device_id: ""
+      i_usb_port_id: ""
+      # RealSense-compatible topic names: color/image_raw, depth/image_rect_raw,
+      # aligned depth. Also what renames the sections below.
+      i_rs_compat: true
+      # Dot projector and flood LED on Pro models; ignored elsewhere.
+      i_enable_ir: true
+      i_publish_tf_from_calibration: true
+    pipeline_gen:
+      i_pipeline_type: RGBD
+      i_nn_type: none
+      i_enable_imu: true
+    color:
+      i_width: 640
+      i_height: 400
+      i_fps: 30.0
+      i_synced: false
+      # Rectified output: what makes the wide-FOV (W) models usable as-is.
+      i_undistorted: true
+    depth:
+      i_width: 640
+      i_height: 400
+      i_fps: 30.0
+      i_synced: false
+      i_aligned: true
+      # FAST_ACCURACY, FAST_DENSITY, ROBOTICS, HIGH_DETAIL, DEFAULT, FACE.
+      i_depth_preset: FAST_ACCURACY
+      # Doubles the disparity search range, which halves the minimum depth
+      # (OAK-D Pro at 400P: ~20 cm with it, ~40 cm without).
+      i_extended_disp: false
+      i_lr_check: true
+      i_subpixel: true

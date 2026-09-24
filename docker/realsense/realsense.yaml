@@ -1,0 +1,50 @@
+# RealSense defaults (D405, or any model without an IMU). Every value below is
+# a ROS parameter of realsense2_camera_node, and the image's entrypoint already
+# runs the node with this file, so a deployment overrides any of them from
+# sheppy's `params:` block (a later --params-file wins) and needs no `command:`
+# unless it renames:
+#
+#   - id: d405_docker
+#     kind: docker
+#     container:
+#       image: ghcr.io/rammp-org/rammp-suite-software/realsense:<tag>
+#       privileged: true
+#       network_mode: host
+#       ipc: host
+#       volumes: [/dev:/dev]
+#       user: "1000:44"          # gid 44 = video: /dev/video* is root:video 0660
+#       environment: {ROS_DOMAIN_ID: "0", HOME: /tmp}
+#       # Only to rename: topics default to /camera/..., frames to camera_*.
+#       command: [--ros-args, -r, __node:=wrist_camera]
+#     params:
+#       serial_no: "_123456789012"
+#       depth_module.color_profile: 640x480x30
+#       depth_module.depth_profile: 640x480x30
+#
+# Parameter names are those of the Humble apt release (4.58.x):
+# https://github.com/IntelRealSense/realsense-ros/blob/ros2-development/README.md
+/**:
+  ros__parameters:
+    # Which camera. All empty = the first RealSense found; set one of them
+    # when the machine has several. serial_no takes a leading underscore
+    # ("_123456789012", from rs-enumerate-devices); usb_port_id is the bus
+    # path ("2-3.4"); device_type is a regex on the model name ("D405").
+    serial_no: ""
+    usb_port_id: ""
+    device_type: ""
+    # Stream profiles are "<width>x<height>x<fps>"; "0,0,0" is the driver's
+    # default for the model (848x480 at 30 on the D405). The D405 has no
+    # separate RGB sensor: its color comes off the depth module, so its color
+    # profile is depth_module.color_profile. Models with one (D415, D435,
+    # D455) take rgb_camera.color_profile instead; the other is ignored.
+    enable_color: true
+    depth_module.color_profile: "0,0,0"
+    rgb_camera.color_profile: "0,0,0"
+    enable_depth: true
+    depth_module.depth_profile: "0,0,0"
+    enable_infra1: false
+    enable_infra2: false
+    # Depth resampled into the color frame, published under
+    # aligned_depth_to_color/ — what consumers of RGB-D pairs want.
+    align_depth.enable: false
+    pointcloud.enable: false

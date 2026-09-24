@@ -23,6 +23,13 @@
 # https://github.com/IntelRealSense/realsense-ros/blob/ros2-development/README.md
 /**:
   ros__parameters:
+    # Which camera. All empty = the first RealSense found; set one of them
+    # when the machine has several. serial_no takes a leading underscore
+    # ("_123456789012", from rs-enumerate-devices); usb_port_id is the bus
+    # path ("2-3.4"); device_type is a regex on the model name ("D435I").
+    serial_no: ""
+    usb_port_id: ""
+    device_type: ""
     # Stream profiles are "<width>x<height>x<fps>". 640x480x30 keeps it in
     # step with the other cameras on the suite; 848x480 is the D435's own
     # aspect ratio if range matters more than matching them.
