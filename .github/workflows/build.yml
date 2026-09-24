@@ -14,18 +14,17 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    # Native arm64: GitHub's hosted arm runner, free for public repos. That
+    # is what abra and the demo machine are, and the only platform rammp-base
+    # publishes. Add linux/amd64 to `platforms` below (and a matrix over
+    # runners) once rammp-org/RAMMP-docker#10 ships a multi-arch base.
+    runs-on: ubuntu-22.04-arm
     strategy:
       fail-fast: false
       matrix:
-        image: [gemini, oak, realsense]
+        image: [gemini, oak, realsense, d435i]
     steps:
       - uses: actions/checkout@v4
-
-      # arm64 only: that is what abra and the demo machine are, and it is the
-      # only platform rammp-base publishes. Add linux/amd64 to `platforms`
-      # below once rammp-org/RAMMP-docker#10 ships a multi-arch base.
-      - uses: docker/setup-qemu-action@v3
 
       - uses: docker/setup-buildx-action@v3
 

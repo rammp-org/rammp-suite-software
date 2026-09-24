@@ -5,7 +5,7 @@
 #   make push TAG=v0.1.0
 REGISTRY ?= ghcr.io/rammp-org/rammp-suite-software
 TAG ?= dev
-IMAGES := gemini oak realsense
+IMAGES := gemini oak realsense d435i
 
 .PHONY: build push $(IMAGES)
 

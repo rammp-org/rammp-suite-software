@@ -1,0 +1,50 @@
+# RealSense D435i defaults. Every value below is a ROS parameter of
+# realsense2_camera_node, and the image's entrypoint already runs the node with
+# this file, so a deployment overrides any of them from sheppy's `params:`
+# block (a later --params-file wins) and needs no `command:` at all:
+#
+#   - id: d435i_docker
+#     kind: docker
+#     container:
+#       image: ghcr.io/rammp-org/rammp-suite-software/d435i:<tag>
+#       privileged: true
+#       network_mode: host
+#       ipc: host
+#       volumes: [/dev:/dev]
+#       user: "1000:44"          # gid 44 = video, as for the D405
+#       environment: {ROS_DOMAIN_ID: "0"}
+#       # Only to rename: topics default to /camera/..., frames to camera_*.
+#       command: [--ros-args, -r, __node:=wrist_camera]
+#     params:
+#       rgb_camera.color_profile: 1280x720x15
+#       depth_module.depth_profile: 848x480x15
+#
+# Parameter names are those of the Humble apt release (4.58.x):
+# https://github.com/IntelRealSense/realsense-ros/blob/ros2-development/README.md
+/**:
+  ros__parameters:
+    # Stream profiles are "<width>x<height>x<fps>". 640x480x30 keeps it in
+    # step with the other cameras on the suite; 848x480 is the D435's own
+    # aspect ratio if range matters more than matching them.
+    enable_color: true
+    rgb_camera.color_profile: 640x480x30
+    enable_depth: true
+    depth_module.depth_profile: 640x480x30
+    enable_infra1: false
+    enable_infra2: false
+    # Depth resampled into the color frame, published under
+    # aligned_depth_to_color/ — what consumers of RGB-D pairs want.
+    align_depth.enable: true
+    pointcloud.enable: false
+    # IMU: the "i" in D435i. The ROS-packaged librealsense reads it through
+    # the kernel's HID-sensor IIO drivers; a host without them (abra's Tegra
+    # kernel, CONFIG_HID_SENSOR_HUB unset) logs "No HID info provided, IMU is
+    # disabled" and streams color and depth regardless. Rates are what the
+    # sensor supports (gyro 200 or 400 Hz, accel 63 or 250 Hz). unite_imu_method 2 interpolates the two
+    # into one sensor_msgs/Imu stream on imu/ instead of separate gyro/ and
+    # accel/ topics; 0 keeps them separate, 1 copies instead of interpolating.
+    enable_gyro: true
+    enable_accel: true
+    gyro_fps: 200
+    accel_fps: 63
+    unite_imu_method: 2
