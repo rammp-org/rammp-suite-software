@@ -18,7 +18,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        image: [gemini, oak, realsense]
+        image: [gemini, oak, realsense, d435i]
     steps:
       - uses: actions/checkout@v4
 
