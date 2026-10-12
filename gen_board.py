@@ -37,10 +37,22 @@ def main() -> None:
     w = round(args.cols * args.square_mm * px_per_mm) + 2 * margin_px
     h = round(args.rows * args.square_mm * px_per_mm) + 2 * margin_px
     img = board.generateImage((w, h), marginSize=margin_px, borderBits=1)
-    cv2.imwrite(str(args.out), img)
 
     width_mm = args.cols * args.square_mm + 2 * args.margin_mm
     height_mm = args.rows * args.square_mm + 2 * args.margin_mm
+    if args.out.suffix.lower() == ".pdf":
+        # A PDF carries the physical page size, so "actual size" printing
+        # cannot be silently rescaled the way a bare PNG can.
+        import img2pdf
+
+        png = cv2.imencode(".png", img)[1].tobytes()
+        layout = img2pdf.get_layout_fun(
+            (img2pdf.mm_to_pt(width_mm), img2pdf.mm_to_pt(height_mm))
+        )
+        args.out.write_bytes(img2pdf.convert(png, layout_fun=layout))
+    else:
+        cv2.imwrite(str(args.out), img)
+
     print(f"wrote {args.out}: {w}x{h} px at {args.dpi} dpi")
     print(f"physical size {width_mm:.0f} x {height_mm:.0f} mm "
           f"({args.cols}x{args.rows} squares of {args.square_mm} mm, "
