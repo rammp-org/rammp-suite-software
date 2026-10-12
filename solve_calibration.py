@@ -147,6 +147,47 @@ def detect_corners(gray: np.ndarray, cols: int, rows: int) -> np.ndarray | None:
     return corners.reshape(-1, 2).astype(np.float64)
 
 
+def charuco_board(
+    cols: int, rows: int, square: float, marker: float, dict_name: str
+) -> "cv2.aruco.CharucoBoard":
+    """cols/rows are SQUARES here (ChArUco convention), not inner corners."""
+    d = cv2.aruco.getPredefinedDictionary(
+        getattr(cv2.aruco, f"DICT_{dict_name.upper()}")
+    )
+    return cv2.aruco.CharucoBoard((cols, rows), square, marker, d)
+
+
+def make_detector(args):
+    """-> detect(gray) returning (img_pts Nx2, obj_pts Nx3) or None.
+
+    Checkerboard: all-or-nothing, full grid. ChArUco: any >= 8 identified
+    corners count — partial views are the point of that board."""
+    if args.board == "checker":
+        objpts = board_object_points(args.cols, args.rows, args.square_size)
+
+        def detect(gray):
+            corners = detect_corners(gray, args.cols, args.rows)
+            return None if corners is None else (corners, objpts)
+
+    else:
+        board = charuco_board(
+            args.cols, args.rows, args.square_size, args.marker_size, args.dict
+        )
+        detector = cv2.aruco.CharucoDetector(board)
+        all_obj = board.getChessboardCorners().astype(np.float64)
+
+        def detect(gray):
+            corners, ids, _, _ = detector.detectBoard(gray)
+            if corners is None or ids is None or len(ids) < 8:
+                return None
+            return (
+                corners.reshape(-1, 2).astype(np.float64),
+                all_obj[ids.reshape(-1)],
+            )
+
+    return detect
+
+
 def pnp_board_pose(
     corners: np.ndarray, objpts: np.ndarray, K: np.ndarray, D: np.ndarray
 ) -> tuple[np.ndarray, float]:
@@ -302,21 +343,35 @@ def write_mounts_yaml(path: Path, entries: dict) -> None:
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("dataset", type=Path)
-    ap.add_argument("--cols", type=int, required=True, help="inner corners per row")
-    ap.add_argument("--rows", type=int, required=True, help="inner corners per column")
-    ap.add_argument("--square-size", type=float, required=True, help="meters")
+    ap.add_argument("--board", choices=("checker", "charuco"), default="checker")
+    ap.add_argument(
+        "--cols", type=int, required=True,
+        help="checker: inner corners per row; charuco: squares per row",
+    )
+    ap.add_argument(
+        "--rows", type=int, required=True,
+        help="checker: inner corners per column; charuco: squares per column",
+    )
+    ap.add_argument(
+        "--square-size", type=float, required=True,
+        help="meters, as MEASURED on the printed board",
+    )
+    ap.add_argument("--marker-size", type=float, help="charuco: marker side, meters")
+    ap.add_argument("--dict", default="4X4_100", help="charuco: aruco dictionary")
     ap.add_argument("--ee-frame", default="end_effector_link")
     ap.add_argument("--base-frame", default="base_link")
     ap.add_argument("--out", type=Path, help="directory for mounts YAML output")
     args = ap.parse_args()
 
-    if args.cols == args.rows:
+    if args.board == "charuco" and not args.marker_size:
+        ap.error("--board charuco requires --marker-size")
+    if args.board == "checker" and args.cols == args.rows:
         print(
             f"WARNING: a {args.cols}x{args.rows} grid is 180-degree ambiguous; "
             "corner order may flip between views and poison every solve."
         )
 
-    objpts = board_object_points(args.cols, args.rows, args.square_size)
+    detect = make_detector(args)
     stations = load_dataset(args.dataset)
     print(f"{len(stations)} stations in {args.dataset}")
 
@@ -328,12 +383,13 @@ def main() -> int:
             if cam not in st.images:
                 continue
             gray = cv2.imread(str(st.images[cam]), cv2.IMREAD_GRAYSCALE)
-            corners = detect_corners(gray, args.cols, args.rows)
-            if corners is None:
+            det = detect(gray)
+            if det is None:
                 print(f"  {st.name}/{cam}: board not found — skipped")
                 continue
+            corners, view_objpts = det
             K, D = intrinsics(st.infos[cam])
-            T, rms = pnp_board_pose(corners, objpts, K, D)
+            T, rms = pnp_board_pose(corners, view_objpts, K, D)
             obs[cam][st.name] = T
             rms_all.append(rms)
         if rms_all:

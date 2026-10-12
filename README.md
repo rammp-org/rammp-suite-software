@@ -14,10 +14,24 @@ embodiment's directory in rammp-deployments (rammp-deployments#76).
 
 ## The board
 
-- Checkerboard with **odd × even inner corners** (e.g. 8×5) — a square count
-  kills the 180° ambiguity. Measure the printed square size with calipers.
-- Clamp it. It must not move for the entire session, and the scene camera must
-  see it where it's clamped.
+Preferred: **ChArUco** (partial views work — the wrist camera will clip a big
+board at close range — and there is no orientation ambiguity):
+
+```bash
+uv run gen_board.py --out board_a2.png   # A2: 10x14 squares @40mm, 4X4_100
+```
+
+Print at 100% scale on matte paper, mount dead flat (Dibond / 6mm+ MDF —
+flatness is the spec that matters most), then **caliper-measure** a run of ~10
+squares and divide: the measured square and marker sizes are what feed the
+solver, printers lie by a percent.
+
+Plain checkerboard also works (`--board checker`, the default): use **odd ×
+even inner corners** (e.g. 8×5) or the 180° ambiguity poisons the solve, and
+every view must contain the whole grid.
+
+Either way: clamp it. It must not move for the entire session, and the scene
+camera must see it where it's clamped.
 
 ## Capture (on the cell)
 
