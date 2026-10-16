@@ -36,6 +36,12 @@ are the same package with different defaults; the OAK image serves the wide
 OAK-D Pro W (the OV9782 "97" variant included) with its own IP and resolution
 in `params:`, its default color undistortion taking care of the wide lens.
 
+The OAK driver never gives up on a camera it cannot find: with an `i_ip` or
+`i_device_id` that matches nothing, it searches forever and publishes nothing.
+So the OAK image exits 1 if the driver is not ready within
+`RAMMP_OAK_READY_TIMEOUT` seconds (default 60, `0` = wait forever), and the
+node shows as crashed rather than running.
+
 ```bash
 make build              # every image, tagged :dev
 make gemini             # just one
