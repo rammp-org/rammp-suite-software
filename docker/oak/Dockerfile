@@ -4,6 +4,7 @@ FROM ghcr.io/rammp-org/rammp-base:1.0.0-jp6
 
 RUN apt-get update \
  && apt-get install -y --no-install-recommends ros-humble-depthai-ros-v3 \
+    ros-humble-ffmpeg-image-transport \
  && rm -rf /var/lib/apt/lists/*
 
 COPY oak.yaml /etc/rammp/oak/oak.yaml
