@@ -29,7 +29,7 @@ def test_h265_moves_packets_and_decodes_back_to_image_raw():
     assert "in/ffmpeg:=/wrist_camera/color/image_raw/ffmpeg" in decoder
     assert "out:=/wrist_camera/color/image_raw" in decoder
     assert "__node:=wrist_camera_color_decoder" in decoder
-    assert "in.ffmpeg.decoders.libx264:=hevc" in decoder  # packets are mislabelled libx264
+    assert "in.ffmpeg.decoders.libx265:=hevc" in decoder  # keyed by packet label (needs the driver label fix)
 
 
 def test_h264_decoder():

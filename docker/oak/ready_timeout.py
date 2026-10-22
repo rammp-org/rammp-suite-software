@@ -28,9 +28,15 @@ import threading
 
 READY = "Driver ready!"
 REPUBLISH = "/opt/ros/humble/lib/image_transport/republish"
+# ffmpeg_image_transport picks the decoder list by the packet's encoder label
+# (param in.ffmpeg.decoders.<label>) and rejects decoders that don't match the
+# label's codec. Its default list tries *_cuvid first, which segfaults in a
+# container without libcuda, so the software decoder is set explicitly.
 # depthai-ros 3.3.0 labels every packet "libx264" (i_low_bandwidth_ffmpeg_encoder
-# is declared but never read), so the decoder is chosen from the codec here.
-DECODERS = {"h264": "h264", "h265": "hevc"}
+# is declared but never read), so h265 needs the driver fix (overnight patch
+# depthai-ros-3.3.0-synced-encoded.patch) plus
+# color.i_low_bandwidth_ffmpeg_encoder: libx265.
+DECODERS = {"h264": ("libx264", "h264"), "h265": ("libx265", "hevc")}
 
 
 def node_name(argv):
@@ -50,7 +56,7 @@ def encoded_commands(argv, codec):
     decoder = [REPUBLISH, "ffmpeg", "raw", "--ros-args",
                "-r", f"__node:={name}_color_decoder",
                "-r", f"in/ffmpeg:={packets}", "-r", f"out:={image}",
-               "-p", f"in.ffmpeg.decoders.libx264:={DECODERS[codec]}"]
+               "-p", "in.ffmpeg.decoders.{}:={}".format(*DECODERS[codec])]
     return driver, decoder, packets, image
 
 
