@@ -7,15 +7,16 @@ supervisor sees a healthy node that publishes nothing. This kills it once the
 timeout passes without "Driver ready!" in its log, and exits non-zero so the
 node shows as crashed. 0 disables the timeout.
 
-Encoded color (RAMMP_OAK_COLOR_CODEC=h264 or h265): the camera encodes color
-on-device (set color.i_low_bandwidth, i_low_bandwidth_profile 2 or 3 and
+Encoded color (RAMMP_OAK_COLOR_CODEC=h264): the camera encodes color
+on-device (set color.i_low_bandwidth, i_low_bandwidth_profile 2 and
 i_publish_compressed in params), so the link carries a small fraction of raw.
 Downstream users should not notice: the driver's packets are moved to
 /<node>/color/image_raw/ffmpeg, and once the driver is ready a decoder
 (image_transport republish with the ffmpeg plugin) publishes sensor_msgs/Image
 on the usual /<node>/color/image_raw with the original header stamp and
 frame_id. camera_info and depth are untouched. The decoder is supervised with
-the driver: if either exits, both stop and the container exits.
+the driver: if either exits, both stop and the container exits (1 if the
+decoder was the one that died).
 
 The driver's output passes through unchanged. SIGTERM/SIGINT are forwarded,
 since this runs as the container's PID 1.
@@ -33,25 +34,27 @@ REPUBLISH = "/opt/ros/humble/lib/image_transport/republish"
 # label's codec. Its default list tries *_cuvid first, which segfaults in a
 # container without libcuda, so the software decoder is set explicitly.
 # depthai-ros 3.3.0 labels every packet "libx264" (i_low_bandwidth_ffmpeg_encoder
-# is declared but never read), so h265 needs the driver fix (overnight patch
-# depthai-ros-3.3.0-synced-encoded.patch) plus
-# color.i_low_bandwidth_ffmpeg_encoder: libx265.
-DECODERS = {"h264": ("libx264", "h264"), "h265": ("libx265", "hevc")}
+# is declared but never read), so h265 is rejected until the image ships the
+# driver fix (rammp-suite-software#8, #10).
+DECODERS = {"h264": ("libx264", "h264")}
+H265_ISSUE = "https://github.com/rammp-org/rammp-suite-software/issues/10"
 
 
-def node_name(argv):
-    """The driver's node name from a `-r __node:=NAME` remap (default: oak)."""
-    name = "oak"
+def remap(argv, key, default):
+    """The value of the last `-r KEY:=VALUE` remap in argv, else default."""
+    value = default
     for a in argv:
-        if a.startswith("__node:="):
-            name = a.split(":=", 1)[1]
-    return name
+        if a.startswith(key + ":="):
+            value = a.split(":=", 1)[1]
+    return value
 
 
 def encoded_commands(argv, codec):
     """(driver argv, decoder argv, packets topic, image topic) for encoded color."""
-    name = node_name(argv)
-    image, packets = f"/{name}/color/image_raw", f"/{name}/color/image_raw/ffmpeg"
+    name = remap(argv, "__node", "driver")
+    ns = remap(argv, "__ns", "").strip("/")
+    base = f"/{ns}/{name}" if ns else f"/{name}"
+    image, packets = f"{base}/color/image_raw", f"{base}/color/image_raw/ffmpeg"
     driver = list(argv) + ["--ros-args", "-r", f"{image}/compressed:={packets}"]
     decoder = [REPUBLISH, "ffmpeg", "raw", "--ros-args",
                "-r", f"__node:={name}_color_decoder",
@@ -63,6 +66,8 @@ def encoded_commands(argv, codec):
 def main():
     timeout = float(os.environ.get("RAMMP_OAK_READY_TIMEOUT", "60"))
     codec = os.environ.get("RAMMP_OAK_COLOR_CODEC", "").lower()
+    if codec == "h265":
+        sys.exit(f"[rammp] RAMMP_OAK_COLOR_CODEC=h265 needs a patched driver, not in this image: {H265_ISSUE}")
     if codec and codec not in DECODERS:
         sys.exit(f"[rammp] RAMMP_OAK_COLOR_CODEC={codec}: expected one of {sorted(DECODERS)}")
     argv, decoder_argv = sys.argv[1:], None
@@ -73,8 +78,11 @@ def main():
     procs = [driver]
     ready = threading.Event()
     timed_out = threading.Event()
+    stopping = threading.Event()
+    decoder_died = threading.Event()
 
     def forward(sig, _):
+        stopping.set()
         for p in procs:
             p.send_signal(sig)
 
@@ -96,7 +104,8 @@ def main():
 
     def stop_driver_when(decoder):
         decoder.wait()
-        if driver.poll() is None:
+        if driver.poll() is None and not stopping.is_set():
+            decoder_died.set()
             print("[rammp] color decoder exited; stopping the driver", file=sys.stderr, flush=True)
             driver.terminate()
 
@@ -116,7 +125,7 @@ def main():
         if p.poll() is None:
             p.terminate()
             p.wait()
-    if timed_out.is_set():
+    if timed_out.is_set() or decoder_died.is_set():
         sys.exit(1)
     sys.exit(128 - code if code < 0 else code)
 
