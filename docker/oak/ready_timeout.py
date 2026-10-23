@@ -41,12 +41,11 @@ H265_ISSUE = "https://github.com/rammp-org/rammp-suite-software/issues/10"
 
 
 def remap(argv, key, default):
-    """The value of the last `-r KEY:=VALUE` remap in argv, else default."""
-    value = default
+    """The value of the first `-r KEY:=VALUE` remap in argv (the one ROS 2 applies), else default."""
     for a in argv:
         if a.startswith(key + ":="):
-            value = a.split(":=", 1)[1]
-    return value
+            return a.split(":=", 1)[1]
+    return default
 
 
 def encoded_commands(argv, codec):

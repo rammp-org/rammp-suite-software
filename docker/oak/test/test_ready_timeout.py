@@ -20,6 +20,8 @@ DRIVER = ["/opt/ros/humble/lib/depthai_ros_driver_v3/driver_node", "--ros-args",
 def test_remap():
     assert rt.remap(DRIVER, "__node", "driver") == "wrist_camera"
     assert rt.remap(["driver_node"], "__node", "driver") == "driver"
+    # ROS 2 applies the first matching rule, so a later rename is ignored.
+    assert rt.remap(DRIVER + ["-r", "__node:=scene_camera"], "__node", "driver") == "wrist_camera"
 
 
 def test_h264_moves_packets_and_decodes_back_to_image_raw():
