@@ -22,7 +22,8 @@
 #
 # Parameter names are those of depthai_ros_driver_v3 3.3.x. With i_rs_compat
 # the stereo section is called `depth` and rgb is `color`; under `stereo:` or
-# `rgb:` they are silently ignored.
+# `rgb:` they are silently ignored. Below are the ones a deployment tunes;
+# `ros2 param dump /<node>` on a running camera lists the rest.
 /**:
   ros__parameters:
     driver:
@@ -50,15 +51,39 @@
       # Rectified output: what makes the wide-FOV (W) models usable as-is.
       i_undistorted: true
     depth:
+      # Stereo resolution. With i_aligned, depth is published at the color
+      # size whatever this is, and halving it halves the minimum depth.
       i_width: 640
       i_height: 400
       i_fps: 30.0
       i_synced: false
       i_aligned: true
       # FAST_ACCURACY, FAST_DENSITY, ROBOTICS, HIGH_DETAIL, DEFAULT, FACE.
+      # The preset alone sets the median filter and the cost aggregation:
+      # neither is a parameter. FAST_ACCURACY has no filters and streaks
+      # along rows; ROBOTICS (7x7 median, spatial and speckle) does not.
       i_depth_preset: FAST_ACCURACY
-      # Doubles the disparity search range, which halves the minimum depth
-      # (OAK-D Pro at 400P: ~20 cm with it, ~40 cm without).
+      # Search range in pixels (DISPARITY_64 or _96); the minimum depth is
+      # fx*baseline over it (OAK-D Pro at 640x400: ~31 cm).
+      i_disparity_width: DISPARITY_96
+      # Doubles the search range, which halves the minimum depth, but takes
+      # the range past the median filter's limit: the device drops the
+      # preset's median and depth streaks.
       i_extended_disp: false
       i_lr_check: true
       i_subpixel: true
+      # These four always replace the preset's own values, so any preset
+      # but ROBOTICS runs with these rather than its own.
+      i_stereo_conf_threshold: 15
+      i_lrc_threshold: 10
+      i_subpixel_fractional_bits: 3
+      i_bilateral_sigma: 0
+      # false keeps whatever the preset does. true turns the filter on with
+      # the driver's i_<filter>_* parameters in place of the preset's, e.g.
+      # i_spatial_filter_alpha, i_temporal_filter_persistency,
+      # i_decimation_filter_decimation_factor, i_threshold_filter_max_range.
+      i_enable_spatial_filter: false
+      i_enable_temporal_filter: false
+      i_enable_speckle_filter: false
+      i_enable_decimation_filter: false
+      i_enable_threshold_filter: false
