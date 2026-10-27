@@ -57,9 +57,9 @@ def test_unknown_codec_exits_nonzero():
     assert r.returncode != 0 and "vp9" in r.stderr
 
 
-def test_h265_is_rejected_until_the_driver_labels_it():
-    r = run_wrapper("true", RAMMP_OAK_COLOR_CODEC="h265")
-    assert r.returncode != 0 and "issues/10" in r.stderr
+def test_h265_decodes_packets_labelled_libx265():
+    decoder = rt.encoded_commands(DRIVER, "h265")[1]
+    assert "in.ffmpeg.decoders.libx265:=hevc" in decoder
 
 
 def test_raw_mode_passes_exit_code_through():

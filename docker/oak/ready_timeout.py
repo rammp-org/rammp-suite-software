@@ -7,9 +7,11 @@ supervisor sees a healthy node that publishes nothing. This kills it once the
 timeout passes without "Driver ready!" in its log, and exits non-zero so the
 node shows as crashed. 0 disables the timeout.
 
-Encoded color (RAMMP_OAK_COLOR_CODEC=h264): the camera encodes color
-on-device (set color.i_low_bandwidth, i_low_bandwidth_profile 2 and
-i_publish_compressed in params), so the link carries a small fraction of raw.
+Encoded color (RAMMP_OAK_COLOR_CODEC=h264 or h265): the camera encodes color
+on-device (set color.i_low_bandwidth, i_publish_compressed and
+i_low_bandwidth_profile in params: 2 for h264, or 3 with
+i_low_bandwidth_ffmpeg_encoder libx265 for h265), so the link carries a small
+fraction of raw.
 Downstream users should not notice: the driver's packets are moved to
 /<node>/color/image_raw/ffmpeg, and once the driver is ready a decoder
 (image_transport republish with the ffmpeg plugin) publishes sensor_msgs/Image
@@ -33,11 +35,10 @@ REPUBLISH = "/opt/ros/humble/lib/image_transport/republish"
 # (param in.ffmpeg.decoders.<label>) and rejects decoders that don't match the
 # label's codec. Its default list tries *_cuvid first, which segfaults in a
 # container without libcuda, so the software decoder is set explicitly.
-# depthai-ros 3.3.0 labels every packet "libx264" (i_low_bandwidth_ffmpeg_encoder
-# is declared but never read), so h265 is rejected until the image ships the
-# driver fix (rammp-suite-software#8, #10).
-DECODERS = {"h264": ("libx264", "h264")}
-H265_ISSUE = "https://github.com/rammp-org/rammp-suite-software/issues/10"
+# The label is color.i_low_bandwidth_ffmpeg_encoder, which stock depthai-ros
+# 3.3.0 ignores (every packet "libx264"); the fork in this image honours it, so
+# h265 needs it set to libx265 (rammp-suite-software#8, #10).
+DECODERS = {"h264": ("libx264", "h264"), "h265": ("libx265", "hevc")}
 
 
 def remap(argv, key, default):
@@ -65,8 +66,6 @@ def encoded_commands(argv, codec):
 def main():
     timeout = float(os.environ.get("RAMMP_OAK_READY_TIMEOUT", "60"))
     codec = os.environ.get("RAMMP_OAK_COLOR_CODEC", "").lower()
-    if codec == "h265":
-        sys.exit(f"[rammp] RAMMP_OAK_COLOR_CODEC=h265 needs a patched driver, not in this image: {H265_ISSUE}")
     if codec and codec not in DECODERS:
         sys.exit(f"[rammp] RAMMP_OAK_COLOR_CODEC={codec}: expected one of {sorted(DECODERS)}")
     argv, decoder_argv = sys.argv[1:], None

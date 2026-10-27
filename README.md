@@ -9,11 +9,15 @@ Code & Drivers for the sensors on RAMMP.
 | Orbbec Gemini 336L | `ghcr.io/rammp-org/rammp-suite-software/gemini` | `ros-humble-orbbec-camera` | `serial_number`, `usb_port` | `-r __ns:=/scene_camera`, plus `camera_name` for the frames |
 | Intel RealSense D405 | `ghcr.io/rammp-org/rammp-suite-software/realsense` | `ros-humble-realsense2-camera` | `serial_no`, `usb_port_id`, `device_type` | `-r __node:=wrist_camera` |
 | Intel RealSense D435i | `ghcr.io/rammp-org/rammp-suite-software/d435i` | `ros-humble-realsense2-camera` | `serial_no`, `usb_port_id`, `device_type` | `-r __node:=wrist_camera` |
-| Luxonis OAK-D Pro PoE, OAK-D Pro W PoE | `ghcr.io/rammp-org/rammp-suite-software/oak` | `ros-humble-depthai-ros-v3` | `driver.i_ip`, `driver.i_device_id`, `driver.i_usb_port_id` | `-r __node:=wrist_camera` |
+| Luxonis OAK-D Pro PoE, OAK-D Pro W PoE | `ghcr.io/rammp-org/rammp-suite-software/oak` | `depthai_ros_driver_v3` from [our fork](https://github.com/SwapnilPande/depthai-ros/tree/humble-develop), on the 3.3.0 apt release | `driver.i_ip`, `driver.i_device_id`, `driver.i_usb_port_id` | `-r __node:=wrist_camera` |
 
 Every driver ships as an arm64 apt package from `packages.ros.org`, so each
 Dockerfile is `rammp-base`, one `apt install`, and one defaults file — no
-source builds. The base is what puts the cameras on Cyclone DDS with the
+source builds. The exception is the OAK driver node: it is built from the
+`humble-develop` branch of our depthai-ros fork, which is the 3.3.0 Humble
+release plus fixes we are upstreaming (#8), against the rest of the 3.3.0 apt
+release. Once those fixes ship in a Luxonis release, the OAK image goes back
+to plain apt. The base is what puts the cameras on Cyclone DDS with the
 fleet's config, the same graph as the arm; its tag is arm64-only, so these
 images are too.
 
