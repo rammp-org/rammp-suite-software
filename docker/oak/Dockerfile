@@ -1,12 +1,41 @@
+# syntax=docker/dockerfile:1
 # Luxonis OAK driver (DepthAI ROS v3): OAK-D Pro PoE, OAK-D Pro W PoE, and the
 # rest of the family. Which one, and how it is tuned, comes from the deployment.
-FROM ghcr.io/rammp-org/rammp-base:1.0.0-jp6
+#
+# The driver itself is built from our depthai-ros fork: DEPTHAI_ROS_REF is the
+# 3.3.0 Humble release plus the fixes we are upstreaming (rammp-suite-software#8).
+# Everything else, depthai-core included, is the apt release that fork is
+# based on. The pin fails the build once apt moves past 3.3.0, rather than
+# building the fork against a newer bridge and core than it was tested with.
+ARG DEPTHAI_ROS_VERSION=3.3.0
 
+FROM ghcr.io/rammp-org/rammp-base:1.0.0-jp6 AS base
+ARG DEPTHAI_ROS_VERSION
+# The stock driver is installed only for its dependencies, then removed so
+# the fork's build is the only depthai_ros_driver_v3 on the ament index.
 RUN apt-get update \
- && apt-get install -y --no-install-recommends ros-humble-depthai-ros-v3 \
+ && apt-get install -y --no-install-recommends \
+    ros-humble-depthai-ros-driver-v3=${DEPTHAI_ROS_VERSION}-* \
     ros-humble-ffmpeg-image-transport \
+ && dpkg --remove ros-humble-depthai-ros-driver-v3 \
  && rm -rf /var/lib/apt/lists/*
 
+FROM base AS build
+ARG DEPTHAI_ROS_REPO=https://github.com/SwapnilPande/depthai-ros.git
+ARG DEPTHAI_ROS_REF=humble-develop
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+    build-essential python3-colcon-common-extensions \
+ && rm -rf /var/lib/apt/lists/*
+# A git ADD resolves the ref on every build, so a moved branch is never
+# served from cache.
+ADD ${DEPTHAI_ROS_REPO}#${DEPTHAI_ROS_REF}:depthai_ros_driver /ws/src/depthai_ros_driver
+RUN . /opt/ros/humble/setup.sh \
+ && cd /ws \
+ && colcon build --cmake-args -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF
+
+FROM base
+COPY --from=build /ws/install/depthai_ros_driver_v3/ /opt/ros/humble/
 COPY oak.yaml /etc/rammp/oak/oak.yaml
 COPY ready_timeout.py /usr/local/bin/ready_timeout.py
 
