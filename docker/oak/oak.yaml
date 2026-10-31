@@ -56,9 +56,22 @@
       i_synced: false
       i_aligned: true
       # FAST_ACCURACY, FAST_DENSITY, ROBOTICS, HIGH_DETAIL, DEFAULT, FACE.
+      # On RVC2 the two FAST_ presets differ only in the confidence and
+      # LR-check thresholds, which the driver overrides anyway
+      # (i_stereo_conf_threshold 15, i_lrc_threshold 10); the other four
+      # decimate by 2 and add median/spatial/speckle filters. Images built
+      # before depthai-ros fork #6 crash on FAST_DENSITY.
       i_depth_preset: FAST_ACCURACY
       # Doubles the disparity search range, which halves the minimum depth
-      # (OAK-D Pro at 400P: ~20 cm with it, ~40 cm without).
+      # (OAK-D Pro at 400P: ~16 cm with it, ~31 cm without). With subpixel,
+      # the doubled range passes the median filter's limit and the device
+      # drops the median; DISPARITY_64 keeps it (OAK-D Pro 400P: ~24 cm).
       i_extended_disp: false
+      i_disparity_width: DISPARITY_96
       i_lr_check: true
       i_subpixel: true
+      # A preset's filters can fall behind on 1280x800 stereo, and frames then
+      # queue on the device (OAK-D Pro W, ROBOTICS at 15 fps: 730 ms age).
+      # This gives post-processing i_post_processing_shaves and
+      # i_post_processing_memory_slices (default 5 / 5, at most 6 slices).
+      i_set_post_processing_hardware_resources: false
