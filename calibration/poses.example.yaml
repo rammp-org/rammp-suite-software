@@ -1,0 +1,14 @@
+# Calibration stations: 7 joint angles (rad) per row, in driver joint order.
+#
+# Build this ON THE CELL: clamp the board, jog the arm with teleop (or
+# --manual capture, which needs no poses file at all), and copy good
+# configurations from /joint_states. What makes a good set:
+#   - 15-20 stations, board filling ~30-70% of the wrist image in each
+#   - ROTATION diversity: orientations differing by 30+ degrees about
+#     different axes — pure translation makes hand-eye degenerate
+#   - varied distance and skew; a few near-frontal, most tilted
+#
+# The scene camera just needs the board visible; it is captured at every
+# station automatically.
+stations:
+  # - [0.0, 0.262, 3.142, -2.269, 0.0, 0.96, 1.571]   # example only — REPLACE

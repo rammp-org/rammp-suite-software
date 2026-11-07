@@ -1,0 +1,16 @@
+[project]
+name = "rammp-calibration"
+version = "0.1.0"
+description = "Camera intrinsics check + hand-eye / scene extrinsics from one checkerboard capture session"
+requires-python = ">=3.10"
+dependencies = [
+    "img2pdf>=0.6.3",
+    "numpy>=1.24",
+    # <5: OpenCV 5.0 split calib3d and dropped cv2.calibrateHandEye; the cell's
+    # ROS Humble runs 4.x, so 4.x is also what matches deployment.
+    "opencv-python-headless>=4.8,<5",
+    "pyyaml>=6",
+]
+
+[dependency-groups]
+dev = ["pytest>=8"]
