@@ -56,3 +56,10 @@ CI builds them all on every push and publishes branch, semver, and sha tags to
 GHCR. The containers are *run* by sheppy, not by this repo: the flags they need
 (privileged, host net/IPC, `/dev`, uid) live with the deployment manifest in
 `rammp-deployments`, and the dojo cell's `compose.yaml` runs the same images.
+
+## Calibration
+
+[`calibration/`](calibration/) solves the wrist camera's hand-eye transform
+and the scene camera's extrinsic from a single ChArUco/checkerboard session.
+It writes a `mounts.yaml` for the embodiment config in `rammp-deployments`.
+See its README.

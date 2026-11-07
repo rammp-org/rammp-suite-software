@@ -36,7 +36,8 @@ camera must see it where it's clamped.
 ## Capture (on the cell)
 
 Needs the `full` profile up: arm driver + planner + `arm_state_publisher`
-(TF!) + both cameras.
+(TF!) + both cameras. `profiles/calibration.yaml` brings up arm, TF and both
+cameras with the planner off.
 
 ```bash
 uv run ~/.claude/skills/hardware-loop/scripts/hil.py sync

@@ -1,0 +1,8 @@
+description: Calibration capture — arm + TF + both cameras (planner intentionally off)
+selections:
+  arm: kinova_gen3_driver
+  arm_state_publisher: kinova_gen3_description
+  wrist_camera: oak_d_pro_docker
+  scene_camera: oak_d_pro_w_docker
+  foxglove: foxglove_bridge_docker
+  object_lifter: object_lifter_boxer
