@@ -1,6 +1,6 @@
 # Intel RealSense driver, defaults for the D405 wrist camera. Same apt package
 # as the D435i image; the two differ only in their defaults file.
-FROM ghcr.io/rammp-org/rammp-base:2.1.0-jp6
+FROM ghcr.io/rammp-org/rammp-base:2.2.0-jp6
 
 RUN apt-get update \
  && apt-get install -y --no-install-recommends ros-humble-realsense2-camera \

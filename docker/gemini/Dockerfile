@@ -1,5 +1,5 @@
 # Orbbec Gemini 330-series driver (the 336L is one of them).
-FROM ghcr.io/rammp-org/rammp-base:2.1.0-jp6
+FROM ghcr.io/rammp-org/rammp-base:2.2.0-jp6
 
 RUN apt-get update \
  && apt-get install -y --no-install-recommends ros-humble-orbbec-camera \

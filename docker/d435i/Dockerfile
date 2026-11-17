@@ -1,6 +1,6 @@
 # Intel RealSense D435i driver. Same apt package as the D405 image; what differs
 # is d435i.yaml, the defaults for a camera that has an IMU and a longer reach.
-FROM ghcr.io/rammp-org/rammp-base:2.1.0-jp6
+FROM ghcr.io/rammp-org/rammp-base:2.2.0-jp6
 
 RUN apt-get update \
  && apt-get install -y --no-install-recommends ros-humble-realsense2-camera \

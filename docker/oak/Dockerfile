@@ -9,7 +9,7 @@
 # building the fork against a newer bridge and core than it was tested with.
 ARG DEPTHAI_ROS_VERSION=3.3.0
 
-FROM ghcr.io/rammp-org/rammp-base:2.1.0-jp6 AS base
+FROM ghcr.io/rammp-org/rammp-base:2.2.0-jp6 AS base
 ARG DEPTHAI_ROS_VERSION
 # The stock driver is installed only for its dependencies, then removed so
 # the fork's build is the only depthai_ros_driver_v3 on the ament index.
